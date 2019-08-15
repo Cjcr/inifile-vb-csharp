@@ -74,30 +74,30 @@ public class IniFile
                 if (regexcomment.Match(line).Success)
                 {
                     m = regexcomment.Match(line);
-                    Trace.WriteLine(string.Format("Skipping Comment: {0}", m.Groups[0].Value));
+                    //Trace.WriteLine(string.Format("Skipping Comment: {0}", m.Groups[0].Value));
                 }
                 else if (regexsection.Match(line).Success)
                 {
                     m = regexsection.Match(line);
-                    Trace.WriteLine(string.Format("Adding section [{0}]", m.Groups[1].Value));
+                    //Trace.WriteLine(string.Format("Adding section [{0}]", m.Groups[1].Value));
                     tempsection = AddSection(m.Groups[1].Value);
                 }
                 else if ( regexkey.Match(line).Success && tempsection != null)
                 {
                     m = regexkey.Match(line);
-                    Trace.WriteLine(string.Format("Adding Key [{0}]=[{1}]", m.Groups[1].Value, m.Groups[2].Value));
+                   // Trace.WriteLine(string.Format("Adding Key [{0}]=[{1}]", m.Groups[1].Value, m.Groups[2].Value));
                     tempsection.AddKey(m.Groups[1].Value).Value = m.Groups[2].Value;
                 }
                 else if ( tempsection != null )
                 {
                     //  Handle Key without value
-                    Trace.WriteLine(string.Format("Adding Key [{0}]", line));
+                    //Trace.WriteLine(string.Format("Adding Key [{0}]", line));
                     tempsection.AddKey(line);
                 }
                 else
                 {
                     //  This should not occur unless the tempsection is not created yet...
-                    Trace.WriteLine(string.Format("Skipping unknown type of data: {0}", line));
+                   // Trace.WriteLine(string.Format("Skipping unknown type of data: {0}", line));
                 }
             }
         }
@@ -110,18 +110,18 @@ public class IniFile
         StreamWriter oWriter = new StreamWriter(sFileName, false, TextEncoding);
         foreach (IniSection s in Sections)
         {
-            Trace.WriteLine(string.Format("Writing Section: [{0}]", s.Name));
+           // Trace.WriteLine(string.Format("Writing Section: [{0}]", s.Name));
             oWriter.WriteLine(string.Format("[{0}]", s.Name));
             foreach (IniSection.IniKey k in s.Keys)
             {
                 if (k.Value != string.Empty)
                 {
-                    Trace.WriteLine(string.Format("Writing Key: {0}={1}", k.Name, k.Value));
+                 //   Trace.WriteLine(string.Format("Writing Key: {0}={1}", k.Name, k.Value));
                     oWriter.WriteLine(string.Format("{0}={1}", k.Name, k.Value));
                 }
                 else
                 {
-                    Trace.WriteLine(string.Format("Writing Key: {0}", k.Name));
+                   // Trace.WriteLine(string.Format("Writing Key: {0}", k.Name));
                     oWriter.WriteLine(string.Format("{0}", k.Name));
                 }
             }
@@ -275,14 +275,15 @@ public class IniFile
         //  Name of the section
         private string m_sSection;
         //  List of IniKeys in the section
-        private Hashtable m_keys;
+        private Dictionary<string, IniKey> m_keys;
 
         // Constuctor so objects are internally managed
         protected internal IniSection(IniFile parent, string sSection)
         {
             m_pIniFile = parent;
             m_sSection = sSection;
-            m_keys = new Hashtable(StringComparer.InvariantCultureIgnoreCase);
+            m_keys = new Dictionary<String, IniKey>(StringComparer.InvariantCultureIgnoreCase);
+      
         }
 
         // Returns and hashtable of keys associated with the section
@@ -293,6 +294,7 @@ public class IniFile
                 return m_keys.Values;
             }
         }
+
 
         // Returns the section name
         public string Name
