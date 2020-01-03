@@ -234,6 +234,17 @@ public class IniFile
         return (m_sections.Count == 0);
     }
 
+    public bool GetSectionBool(string sSection)
+    {
+        sSection = sSection.Trim();
+        // Trim spaces
+        if (m_sections.ContainsKey(sSection))
+        {
+            return true;
+        }
+        return false;
+    }
+
     // Returns an IniSection to the section by name, NULL if it was not found
     public IniSection GetSection(string sSection)
     {
