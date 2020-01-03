@@ -36,7 +36,8 @@ Imports System.Text
 Public Class IniFile
     ' List of IniSection objects keeps track of all the sections in the INI file
     Private m_sections As Dictionary(Of String, IniSection) ' Hashtable
-
+    Dim LoadFileName As String = "null"
+    Dim SaveFileName As String = "null"
 
     ' var dict = New Dictionary < Int(), string>( StringComparer.CurrentCultureIgnoreCase );
 
@@ -52,61 +53,81 @@ Public Class IniFile
         If Not bMerge Then
             RemoveAllSections()
         End If
+        LoadFileName = sFileName
+        If File.Exists(LoadFileName) Then
+            '  Clear the object... 
+            Dim tempsection As IniSection = Nothing
+            Dim oReader As New StreamReader(sFileName, TextEncoding)
+            Dim regexcomment As New Regex("^([\s]*#.*)", (RegexOptions.Singleline Or RegexOptions.IgnoreCase))
+            Dim regexsection As New Regex("^[\s]*\[[\s]*([^\[\s].*[^\s\]])[\s]*\][\s]*$", (RegexOptions.Singleline Or RegexOptions.IgnoreCase))
+            Dim regexkey As New Regex("^\s*([^=]*[^\s=])\s*=(.*)", (RegexOptions.Singleline Or RegexOptions.IgnoreCase))
+            While Not oReader.EndOfStream
+                Dim line As String = oReader.ReadLine()
+                'Trace.WriteLine("Linea: " & line)
+                If line <> String.Empty Then
 
-        '  Clear the object... 
-        Dim tempsection As IniSection = Nothing
-        Dim oReader As New StreamReader(sFileName, TextEncoding)
-        Dim regexcomment As New Regex("^([\s]*#.*)", (RegexOptions.Singleline Or RegexOptions.IgnoreCase))
-        Dim regexsection As New Regex("^[\s]*\[[\s]*([^\[\s].*[^\s\]])[\s]*\][\s]*$", (RegexOptions.Singleline Or RegexOptions.IgnoreCase))
-        Dim regexkey As New Regex("^\s*([^=]*[^\s=])\s*=(.*)", (RegexOptions.Singleline Or RegexOptions.IgnoreCase))
-        While Not oReader.EndOfStream
-            Dim line As String = oReader.ReadLine()
-            'Trace.WriteLine("Linea: " & line)
-            If line <> String.Empty Then
-
-                Dim m As Match = Nothing
-                If regexcomment.Match(line).Success Then
-                    m = regexcomment.Match(line)
-                    Trace.WriteLine(String.Format("Skipping Comment: {0}", m.Groups(0).Value))
-                ElseIf regexsection.Match(line).Success Then
-                    m = regexsection.Match(line)
-                    Trace.WriteLine(String.Format("Adding section [{0}]", m.Groups(1).Value))
-                    tempsection = AddSection(m.Groups(1).Value)
-                ElseIf regexkey.Match(line).Success AndAlso tempsection IsNot Nothing Then
-                    m = regexkey.Match(line)
-                    Trace.WriteLine(String.Format("Adding Key [{0}]=[{1}]", m.Groups(1).Value, m.Groups(2).Value))
-                    tempsection.AddKey(m.Groups(1).Value).Value = m.Groups(2).Value
-                ElseIf tempsection IsNot Nothing Then
-                    '  Handle Key without value
-                    Trace.WriteLine(String.Format("Adding Key [{0}]", line))
-                    tempsection.AddKey(line)
-                Else
-                    '  This should not occur unless the tempsection is not created yet...
-                    Trace.WriteLine(String.Format("Skipping unknown type of data: {0}", line))
+                    Dim m As Match = Nothing
+                    If regexcomment.Match(line).Success Then
+                        m = regexcomment.Match(line)
+                        Trace.WriteLine(String.Format("Skipping Comment: {0}", m.Groups(0).Value))
+                    ElseIf regexsection.Match(line).Success Then
+                        m = regexsection.Match(line)
+                        Trace.WriteLine(String.Format("Adding section [{0}]", m.Groups(1).Value))
+                        tempsection = AddSection(m.Groups(1).Value)
+                    ElseIf regexkey.Match(line).Success AndAlso tempsection IsNot Nothing Then
+                        m = regexkey.Match(line)
+                        Trace.WriteLine(String.Format("Adding Key [{0}]=[{1}]", m.Groups(1).Value, m.Groups(2).Value))
+                        tempsection.AddKey(m.Groups(1).Value).Value = m.Groups(2).Value
+                    ElseIf tempsection IsNot Nothing Then
+                        '  Handle Key without value
+                        Trace.WriteLine(String.Format("Adding Key [{0}]", line))
+                        tempsection.AddKey(line)
+                    Else
+                        '  This should not occur unless the tempsection is not created yet...
+                        Trace.WriteLine(String.Format("Skipping unknown type of data: {0}", line))
+                    End If
                 End If
-            End If
-        End While
-        oReader.Close()
+            End While
+            oReader.Close()
+        End If
+
     End Sub
+
+
+    Public Overloads Function Save() As Boolean
+        If LoadFileName <> "null" Then
+            Return Save(LoadFileName, Encoding.UTF8)
+        Else
+            Return False
+        End If
+    End Function
 
     ' Used to save the data back to the file or your choice
-    Public Sub Save(ByVal sFileName As String, ByVal TextEncoding As Encoding)
-        Dim oWriter As New StreamWriter(sFileName, False, TextEncoding)
-        For Each s As IniSection In Sections
-            Trace.WriteLine(String.Format("Writing Section: [{0}]", s.Name))
-            oWriter.WriteLine(String.Format("[{0}]", s.Name))
-            For Each k As IniSection.IniKey In s.Keys
-                If k.Value <> String.Empty Then
-                    Trace.WriteLine(String.Format("Writing Key: {0}={1}", k.Name, k.Value))
-                    oWriter.WriteLine(String.Format("{0}={1}", k.Name, k.Value))
-                Else
-                    Trace.WriteLine(String.Format("Writing Key: {0}=", k.Name))
-                    oWriter.WriteLine(String.Format("{0}=", k.Name))
-                End If
+    Public Overloads Function Save(ByVal sFileName As String, ByVal TextEncoding As Encoding) As Boolean
+        Try
+            SaveFileName = sFileName
+            Dim oWriter As New StreamWriter(sFileName, False, TextEncoding)
+            For Each s As IniSection In Sections
+                Trace.WriteLine(String.Format("Writing Section: [{0}]", s.Name))
+                oWriter.WriteLine(String.Format("[{0}]", s.Name))
+                For Each k As IniSection.IniKey In s.Keys
+                    If k.Value <> String.Empty Then
+                        Trace.WriteLine(String.Format("Writing Key: {0}={1}", k.Name, k.Value))
+                        oWriter.WriteLine(String.Format("{0}={1}", k.Name, k.Value))
+                    Else
+                        Trace.WriteLine(String.Format("Writing Key: {0}=", k.Name))
+                        oWriter.WriteLine(String.Format("{0}=", k.Name))
+                    End If
+                Next
             Next
-        Next
-        oWriter.Close()
-    End Sub
+            oWriter.Close()
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+
+    End Function
+
 
     ' Gets all the sections
     Public ReadOnly Property Sections() As System.Collections.ICollection

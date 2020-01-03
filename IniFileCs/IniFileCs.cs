@@ -39,6 +39,8 @@ public class IniFile
     // List of IniSection objects keeps track of all the sections in the INI file
     //private IDictionary<string, IniSection> m_sections;
     private Dictionary<string, IniSection> m_sections;
+    private String LoadFileName = "null";
+    private String SaveFileName = "null";
 
     // Public constructor
     public IniFile()
@@ -60,73 +62,115 @@ public class IniFile
             RemoveAllSections();
         }
         //  Clear the object... 
-        IniSection tempsection = null;
-        StreamReader oReader = new StreamReader(sFileName, TextEncoding);
-        Regex regexcomment = new Regex("^([\\s]*#.*)", (RegexOptions.Singleline | RegexOptions.IgnoreCase));
-        Regex regexsection = new Regex("^[\\s]*\\[[\\s]*([^\\[\\s].*[^\\s\\]])[\\s]*\\][\\s]*$", (RegexOptions.Singleline | RegexOptions.IgnoreCase));
-        Regex regexkey = new Regex("^\\s*([^=]*[^\\s=])\\s*=(.*)", (RegexOptions.Singleline | RegexOptions.IgnoreCase));
-        while (!oReader.EndOfStream)
+        LoadFileName = sFileName;
+        if(File.Exists(LoadFileName))
         {
-            string line = oReader.ReadLine();
-            if (line != string.Empty)
-            {
-                Match m = null;
-                if (regexcomment.Match(line).Success)
-                {
-                    m = regexcomment.Match(line);
-                    //Trace.WriteLine(string.Format("Skipping Comment: {0}", m.Groups[0].Value));
-                }
-                else if (regexsection.Match(line).Success)
-                {
-                    m = regexsection.Match(line);
-                    //Trace.WriteLine(string.Format("Adding section [{0}]", m.Groups[1].Value));
-                    tempsection = AddSection(m.Groups[1].Value);
-                }
-                else if ( regexkey.Match(line).Success && tempsection != null)
-                {
-                    m = regexkey.Match(line);
-                   // Trace.WriteLine(string.Format("Adding Key [{0}]=[{1}]", m.Groups[1].Value, m.Groups[2].Value));
-                    tempsection.AddKey(m.Groups[1].Value).Value = m.Groups[2].Value;
-                }
-                else if ( tempsection != null )
-                {
-                    //  Handle Key without value
-                    //Trace.WriteLine(string.Format("Adding Key [{0}]", line));
-                    tempsection.AddKey(line);
-                }
-                else
-                {
-                    //  This should not occur unless the tempsection is not created yet...
-                   // Trace.WriteLine(string.Format("Skipping unknown type of data: {0}", line));
-                }
-            }
+             IniSection tempsection = null;
+                    StreamReader oReader = new StreamReader(sFileName, TextEncoding);
+                    Regex regexcomment = new Regex("^([\\s]*#.*)", (RegexOptions.Singleline | RegexOptions.IgnoreCase));
+                    Regex regexsection = new Regex("^[\\s]*\\[[\\s]*([^\\[\\s].*[^\\s\\]])[\\s]*\\][\\s]*$", (RegexOptions.Singleline | RegexOptions.IgnoreCase));
+                    Regex regexkey = new Regex("^\\s*([^=]*[^\\s=])\\s*=(.*)", (RegexOptions.Singleline | RegexOptions.IgnoreCase));
+                    while (!oReader.EndOfStream)
+                    {
+                        string line = oReader.ReadLine();
+                        if (line != string.Empty)
+                        {
+                            Match m = null;
+                            if (regexcomment.Match(line).Success)
+                            {
+                                m = regexcomment.Match(line);
+                                //Trace.WriteLine(string.Format("Skipping Comment: {0}", m.Groups[0].Value));
+                            }
+                            else if (regexsection.Match(line).Success)
+                            {
+                                m = regexsection.Match(line);
+                                //Trace.WriteLine(string.Format("Adding section [{0}]", m.Groups[1].Value));
+                                tempsection = AddSection(m.Groups[1].Value);
+                            }
+                            else if ( regexkey.Match(line).Success && tempsection != null)
+                            {
+                                m = regexkey.Match(line);
+                               // Trace.WriteLine(string.Format("Adding Key [{0}]=[{1}]", m.Groups[1].Value, m.Groups[2].Value));
+                                tempsection.AddKey(m.Groups[1].Value).Value = m.Groups[2].Value;
+                            }
+                            else if ( tempsection != null )
+                            {
+                                //  Handle Key without value
+                                //Trace.WriteLine(string.Format("Adding Key [{0}]", line));
+                                tempsection.AddKey(line);
+                            }
+                            else
+                            {
+                                //  This should not occur unless the tempsection is not created yet...
+                               // Trace.WriteLine(string.Format("Skipping unknown type of data: {0}", line));
+                            }
+                        }
+                    }
+                    oReader.Close();
         }
-        oReader.Close();
+       
     }
 
     // Used to save the data back to the file or your choice
-    public void Save(string sFileName, Encoding TextEncoding)
+
+    public bool Save()
     {
-        StreamWriter oWriter = new StreamWriter(sFileName, false, TextEncoding);
-        foreach (IniSection s in Sections)
+        if (LoadFileName != "null")
         {
-           // Trace.WriteLine(string.Format("Writing Section: [{0}]", s.Name));
-            oWriter.WriteLine(string.Format("[{0}]", s.Name));
-            foreach (IniSection.IniKey k in s.Keys)
+            return Save(LoadFileName, Encoding.UTF8);
+        } else
+        {
+            return false;
+        }
+    }
+    public bool Save(string sFileName, Encoding TextEncoding)
+    {
+        try
+        {
+            SaveFileName = sFileName;
+            StreamWriter oWriter = new StreamWriter(sFileName, false, TextEncoding);
+            foreach (IniSection s in Sections)
             {
-                if (k.Value != string.Empty)
+                // Trace.WriteLine(string.Format("Writing Section: [{0}]", s.Name));
+                oWriter.WriteLine(string.Format("[{0}]", s.Name));
+                foreach (IniSection.IniKey k in s.Keys)
                 {
-                 //   Trace.WriteLine(string.Format("Writing Key: {0}={1}", k.Name, k.Value));
-                    oWriter.WriteLine(string.Format("{0}={1}", k.Name, k.Value));
-                }
-                else
-                {
-                   // Trace.WriteLine(string.Format("Writing Key: {0}", k.Name));
-                    oWriter.WriteLine(string.Format("{0}", k.Name));
+                    if (k.Value != string.Empty)
+                    {
+                        //   Trace.WriteLine(string.Format("Writing Key: {0}={1}", k.Name, k.Value));
+                        oWriter.WriteLine(string.Format("{0}={1}", k.Name, k.Value));
+                    }
+                    else
+                    {
+                        // Trace.WriteLine(string.Format("Writing Key: {0}", k.Name));
+                        oWriter.WriteLine(string.Format("{0}", k.Name));
+                    }
                 }
             }
+            oWriter.Close();
+            return true;
         }
-        oWriter.Close();
+        catch (Exception)
+        {
+            return false;
+        }
+   
+    }
+
+    public String Load_Path
+    {
+        get
+        {
+            return LoadFileName;
+        }
+    }
+
+    public String Save_Path
+    {
+        get
+        {
+            return SaveFileName;
+        }
     }
 
     // Gets all the sections names
@@ -162,6 +206,8 @@ public class IniFile
         sSection = sSection.Trim();
         return RemoveSection(GetSection(sSection));
     }
+
+    
 
     // Removes section by object, returns trus on success
     public bool RemoveSection(IniSection Section)
@@ -267,6 +313,10 @@ public class IniFile
         return false;
     }
 
+    public bool RemoveKey(string sSection, string sKey) //cjcr fix (expose to make it easy to find).
+    {
+       return RemoveKey(sSection, sKey);
+    }
     // IniSection class 
     public class IniSection
     {

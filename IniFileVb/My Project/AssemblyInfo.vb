@@ -12,7 +12,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("IniFile Reader (with UTF8 support)")>
 <Assembly: AssemblyCompany("Cjcr-Software (mod. version of Ludvik Jerabek)")>
 <Assembly: AssemblyProduct("IniFileVb")>
-<Assembly: AssemblyCopyright("Copyright © Cjcr-Software 2019")>
+<Assembly: AssemblyCopyright("Copyright © Cjcr-Software 2020")>
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)>
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("2.0.0.0")>
-<Assembly: AssemblyFileVersion("2.0.0.0")>
+<Assembly: AssemblyVersion("2.0.0.1")>
+<Assembly: AssemblyFileVersion("2.0.0.1")>
